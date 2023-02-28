@@ -14,6 +14,7 @@ if(Boost_FOUND)
 
     include_directories(${Boost_INCLUDE_DIRS})
     add_executable(sync_http_server sync_http_server.cpp)
+    add_executable(async_http_server async_http_server.cpp)
 
     add_executable(http_client_sync http_client_sync.cpp)
     target_link_libraries(http_client_sync stdc++_libbacktrace)
