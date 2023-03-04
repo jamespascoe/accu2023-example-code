@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 {
   if (argc != 4) {
     std::cerr << std::format(
-      "Usage: {} <ip-address> <port> <num_threads>\n"
+      "Usage: {} <ip-address> <port> <threads>\n"
       "E.g.: {} 0.0.0.0 8080 2\n",
       argv[0], argv[0]
     );

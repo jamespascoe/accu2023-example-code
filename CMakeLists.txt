@@ -17,6 +17,7 @@ if(Boost_FOUND)
     add_executable(sync_http_server sync_http_server.cpp)
     add_executable(async_http_server async_http_server.cpp)
     add_executable(coro_http_server coro_http_server.cpp)
+    add_executable(await_http_server await_http_server.cpp)
 
     target_link_libraries(coro_http_server ${Boost_LIBRARIES})
 endif()
