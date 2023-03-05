@@ -1,5 +1,3 @@
-// g++-12.2 -std=c++2b ../http_server_awaitable.cpp -L /usr/local/lib64 -I /home/pascoej/boost_1_81_0/ -L /home/pascoej/boost_1_81_0/libs/ -l pthread -o http_server_awaitable
-
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -53,7 +51,6 @@ net::awaitable<void> do_session(tcp_stream stream)
           res.keep_alive(req.keep_alive());
           return res;
         };
-
         http::message_generator msg = handle_request();
 
         // Determine if we should close the connection
@@ -62,7 +59,7 @@ net::awaitable<void> do_session(tcp_stream stream)
         // Send the response
         co_await beast::async_write(stream, std::move(msg), net::use_awaitable);
 
-        if(! keep_alive)
+        if(!keep_alive)
         {
             // This means we should close the connection, usually because
             // the response indicated the "Connection: close" semantic.
@@ -71,8 +68,8 @@ net::awaitable<void> do_session(tcp_stream stream)
     }
     catch (boost::system::system_error & se)
     {
-        if (se.code() != http::error::end_of_stream )
-            throw ;
+        if (se.code() != http::error::end_of_stream)
+            throw;
     }
 
     // Send a TCP shutdown
@@ -105,14 +102,16 @@ net::awaitable<void> do_listen(tcp::endpoint endpoint)
                 do_session(tcp_stream(co_await acceptor.async_accept())),
                 [](std::exception_ptr e)
                 {
+               #if 0
                     try
                     {
-                        // Print out stack trace here
-                        std::rethrow_exception(e);
+                    std::cerr << "Rethrow session" << std::endl;
+   //                     std::rethrow_exception(e);
                     }
                     catch (std::exception &e) {
                         std::cerr << "Error in session: " << e.what() << "\n";
                     }
+                #endif
                 });
 
 }
@@ -122,7 +121,7 @@ int main(int argc, char* argv[])
     // Check command line arguments.
     if (argc != 4) {
       std::cerr << std::format(
-        "Usage: {} <ip-address> <port> <threads>\nE.g.: {} 0.0.0.0 8080\n",
+        "Usage: {} <ip-address> <port> <threads>\nE.g.: {} 0.0.0.0 8080 1\n",
         argv[0], argv[0]
       );
       return EXIT_FAILURE;
@@ -130,7 +129,7 @@ int main(int argc, char* argv[])
 
     auto const address = net::ip::make_address(argv[1]);
     auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-    auto const num_threads = std::max<int>(1, std::atoi(argv[4]));
+    auto const num_threads = std::max<int>(1, std::atoi(argv[3]));
 
     // The io_context is required for all I/O
     net::io_context ioc{num_threads};
@@ -140,16 +139,19 @@ int main(int argc, char* argv[])
                           do_listen(tcp::endpoint{address, port}),
                           [](std::exception_ptr e)
                           {
+#if 0
                               if (e)
                                   try
                                   {
-                                      std::rethrow_exception(e);
+                                  std::cerr << "Rethrow" << std::endl;
+                //                      std::rethrow_exception(e);
                                   }
                                   catch(std::exception & e)
                                   {
                                       std::cerr << "Error in acceptor: " << e.what() << "\n";
                                   }
-                          });
+#endif
+                                  });
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v(num_threads-1);
