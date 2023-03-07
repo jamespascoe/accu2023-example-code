@@ -16,56 +16,45 @@ int main(int argc, char *argv[])
 {
   if (argc != 3) {
     std::cerr << std::format(
-      "Usage: {} <ip-address> <port>\nE.g.: {} 0.0.0.0 8080\n",
+      "Usage: {} <ip-address> <port>\n"
+      "E.g.: {} 0.0.0.0 8080\n",
       argv[0], argv[0]
     );
     return EXIT_FAILURE;
   }
 
   try {
+    asio::io_context ioc;
+
+    // Create an acceptor
     auto const address = asio::ip::make_address(argv[1]);
     auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
 
-    asio::io_context ioc;
-
-    // The acceptor receives incoming connections
     tcp::acceptor acceptor{ioc, {address, port}};
+
     for(;;)
     {
-      // This will receive the new connection
+      // Create a socket and block until we get a connection
       tcp::socket socket{ioc};
-
-      // Block until we get a connection
       acceptor.accept(socket);
 
-      // Launch the session, transferring ownership of the socket
-      beast::error_code ec;
-
-      // This buffer is required to persist across reads
+      // A client has connected - declare a buffer
       beast::flat_buffer buffer;
+      beast::error_code ec;
 
       for(;;)
       {
-        // Read a request
+        // Read an HTTP request
         http::request<http::string_body> req;
         http::read(socket, buffer, req, ec);
         if(ec == http::error::end_of_stream)
-          break;
+          break; // Client disconnected - reset
 
-        // Handle request
-        http::response<http::string_body> res{http::status::ok, req.version()};
-        res.set(http::field::server, "Beast");
-        res.body() = "Hello, world!";
-        res.prepare_payload();
-        res.keep_alive(req.keep_alive());
-
-        // Determine if we should close the connection
-        bool keep_alive = res.keep_alive();
-
+        // Create a response
         auto handle_request = [&req]() -> http::message_generator {
           http::response<http::string_body> res{http::status::ok, req.version()};
           res.set(http::field::server, "Beast");
-          res.body() = "Hello, ACCU 2023!";
+          res.body() = "Hello ACCU 2023 from Synchronous Server!";
           res.prepare_payload();
           res.keep_alive(req.keep_alive());
           return res;
@@ -73,13 +62,6 @@ int main(int argc, char *argv[])
 
         // Send the response
         beast::write(socket, handle_request(), ec);
-
-        if(! keep_alive)
-        {
-          // This means we should close the connection, usually because
-          // the response indicated the "Connection: close" semantic.
-          break;
-        }
       }
 
       // Send a TCP shutdown
