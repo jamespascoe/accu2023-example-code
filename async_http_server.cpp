@@ -87,8 +87,8 @@ public:
         // Send the response
         auto handle_request = [this]() -> http::message_generator {
           http::response<http::string_body> res{http::status::ok, req_.version()};
-          res.set(http::field::server, "Beast");
-          res.body() = "Hello, ACCU 2023!";
+          res.set(http::field::server, "Boost.Beast");
+          res.body() = "Hello ACCU 2023!";
           res.prepare_payload();
           res.keep_alive(req_.keep_alive());
           return res;

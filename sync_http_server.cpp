@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
           res.set(http::field::server, "Beast");
           res.body() = "Hello ACCU 2023 from Synchronous Server!";
           res.prepare_payload();
-          res.keep_alive(req.keep_alive());
           return res;
         };
 

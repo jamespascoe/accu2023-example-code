@@ -8,80 +8,59 @@
 
 #include <iostream>
 #include <memory>
-#include <format>
 #include <thread>
 #include <vector>
+#include <format>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
-// Report a failure
-void
-fail(beast::error_code ec, char const* what)
+// Report an error
+void error(beast::error_code ec, char const* msg)
 {
-    std::cerr << what << ": " << ec.message() << "\n";
+  std::cerr << std::format("Error: {} - {}\n", msg, ec.message());
 }
 
-// Handles an HTTP server connection
 void
 do_session(
     beast::tcp_stream& stream,
     asio::yield_context yield)
 {
+    beast::flat_buffer buffer;
     beast::error_code ec;
 
-    // This buffer is required to persist across reads
-    beast::flat_buffer buffer;
-
-    // This lambda is used to send messages
     for(;;)
     {
-        // Set the timeout.
+        // Set a timeout (in case the client stops responding)
         stream.expires_after(std::chrono::seconds(30));
 
         // Read a request
         http::request<http::string_body> req;
         http::async_read(stream, buffer, req, yield[ec]);
-        if(ec == http::error::end_of_stream)
-            break;
-        if(ec)
-            return fail(ec, "read");
+
+        if(ec == http::error::end_of_stream) break;
+
+        if(ec) return error(ec, "read request");
 
         // Handle the request
         auto handle_request = [&req]() -> http::message_generator {
           http::response<http::string_body> res{http::status::ok, req.version()};
           res.set(http::field::server, "Beast");
-          res.body() = "Hello, ACCU 2023!";
+          res.body() = "Hello ACCU 2023 from the Stackful Coroutine Server!";
           res.prepare_payload();
-          res.keep_alive(req.keep_alive());
           return res;
         };
 
-        http::message_generator msg = handle_request();
-
-        // Determine if we should close the connection
-        bool keep_alive = msg.keep_alive();
-
         // Send the response
-        beast::async_write(stream, std::move(msg), yield[ec]);
+        beast::async_write(stream, handle_request(), yield[ec]);
 
-        if(ec)
-            return fail(ec, "write");
-
-        if(! keep_alive)
-        {
-            // This means we should close the connection, usually because
-            // the response indicated the "Connection: close" semantic.
-            break;
-        }
+        if(ec) return error(ec, "write response");
     }
 
-    // Send a TCP shutdown
+    // Close the connection
     stream.socket().shutdown(tcp::socket::shutdown_send, ec);
-
-    // At this point the connection is closed gracefully
 }
 
 // Accepts incoming connections and launches the sessions
@@ -95,30 +74,26 @@ void do_listen(
     // Open the acceptor
     tcp::acceptor acceptor(ioc);
     acceptor.open(endpoint.protocol(), ec);
-    if(ec)
-        return fail(ec, "open");
+    if(ec) return error(ec, "open");
 
     // Allow address reuse
     acceptor.set_option(asio::socket_base::reuse_address(true), ec);
-    if(ec)
-        return fail(ec, "set_option");
+    if(ec) return error(ec, "set_option");
 
     // Bind to the server address
     acceptor.bind(endpoint, ec);
-    if(ec)
-        return fail(ec, "bind");
+    if(ec) return error(ec, "bind");
 
     // Start listening for connections
     acceptor.listen(asio::socket_base::max_listen_connections, ec);
-    if(ec)
-        return fail(ec, "listen");
+    if(ec) return error(ec, "listen");
 
     for(;;)
     {
         tcp::socket socket(ioc);
         acceptor.async_accept(socket, yield[ec]);
         if(ec)
-            fail(ec, "accept");
+            error(ec, "accept");
         else
             boost::asio::spawn(
                 acceptor.get_executor(),
