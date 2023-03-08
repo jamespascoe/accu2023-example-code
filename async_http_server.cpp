@@ -1,34 +1,27 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
 #include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
 
 #include <iostream>
-#include <memory>
-#include <format>
 #include <thread>
-#include <vector>
+#include <format>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
-// Report a failure
-void
-fail(beast::error_code ec, char const* what)
+void error(beast::error_code ec, char const* what)
 {
-    std::cerr << what << ": " << ec.message() << "\n";
-}
+    std::cerr << std::format("Error: {} : {}\n", what, ec.message());
+    return;
+};
 
 // Handles an HTTP server connection
 class session : public std::enable_shared_from_this<session>
 {
     beast::tcp_stream stream_;
     beast::flat_buffer buffer_;
-    std::shared_ptr<std::string const> doc_root_;
     http::request<http::string_body> req_;
 
 public:
@@ -78,68 +71,42 @@ public:
         boost::ignore_unused(bytes_transferred);
 
         // This means they closed the connection
-        if(ec == http::error::end_of_stream)
-            return do_close();
+        if(ec == http::error::end_of_stream) {
+            stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+            return;
+        }
 
-        if(ec)
-            return fail(ec, "read");
+        if(ec) return error(ec, "read");
 
         // Send the response
         auto handle_request = [this]() -> http::message_generator {
           http::response<http::string_body> res{http::status::ok, req_.version()};
           res.set(http::field::server, "Boost.Beast");
-          res.body() = "Hello ACCU 2023!";
+          res.body() = "Hello ACCU 2023 from the Asynchronous Server!";
           res.prepare_payload();
           res.keep_alive(req_.keep_alive());
           return res;
         };
 
-        send_response(handle_request());
-    }
-
-    void
-    send_response(http::message_generator&& msg)
-    {
-        bool keep_alive = msg.keep_alive();
-
-        // Write the response
         beast::async_write(
             stream_,
-            std::move(msg),
+            handle_request(),
             beast::bind_front_handler(
-                &session::on_write, shared_from_this(), keep_alive));
+                &session::on_write, shared_from_this()));
     }
 
     void
     on_write(
-        bool keep_alive,
         beast::error_code ec,
         std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
-        if(ec)
-            return fail(ec, "write");
+        if(ec) return error(ec, "write");
 
-        if(! keep_alive)
-        {
-            // This means we should close the connection, usually because
-            // the response indicated the "Connection: close" semantic.
-            return do_close();
-        }
-
+        stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
         // Read another request
         do_read();
-    }
-
-    void
-    do_close()
-    {
-        // Send a TCP shutdown
-        beast::error_code ec;
-        stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
-
-        // At this point the connection is closed gracefully
     }
 };
 
@@ -160,41 +127,24 @@ public:
 
         // Open the acceptor
         acceptor_.open(endpoint.protocol(), ec);
-        if(ec)
-        {
-            fail(ec, "open");
-            return;
-        }
+        if(ec) error(ec, "open");
 
         // Allow address reuse
         acceptor_.set_option(asio::socket_base::reuse_address(true), ec);
-        if(ec)
-        {
-            fail(ec, "set_option");
-            return;
-        }
+        if(ec) error(ec, "set_option");
 
         // Bind to the server address
         acceptor_.bind(endpoint, ec);
-        if(ec)
-        {
-            fail(ec, "bind");
-            return;
-        }
+        if(ec) error(ec, "bind");
 
         // Start listening for connections
         acceptor_.listen(
             asio::socket_base::max_listen_connections, ec);
-        if(ec)
-        {
-            fail(ec, "listen");
-            return;
-        }
+        if(ec) error(ec, "listen");
     }
 
     // Start accepting incoming connections
-    void
-    run()
+    void run()
     {
         do_accept();
     }
@@ -214,17 +164,11 @@ private:
     void
     on_accept(beast::error_code ec, tcp::socket socket)
     {
-        if(ec)
-        {
-            fail(ec, "accept");
-            return; // To avoid infinite loop
-        }
-        else
-        {
-            // Create the session and run it
-            std::make_shared<session>(
-                std::move(socket))->run();
-        }
+        if(ec) error(ec, "accept");
+
+        // Create the session and run it
+        std::make_shared<session>(
+            std::move(socket))->run();
 
         // Accept another connection
         do_accept();
