@@ -11,7 +11,8 @@ Feedback: james.pascoe@bluwireless.com
 set(LUA_MESH_SWIG_SRCS
     lua_mesh_actions.i
     lua_mesh_action_log.cpp
-    lua_mesh_action_talk.cpp
+    lua_mesh_action_scan.cpp
+    lua_mesh_action_connect.cpp
     lua_mesh_action_timer.cpp)
 
 set_source_files_properties(${LUA_MESH_SWIG_SRCS} PROPERTIES CPLUSPLUS ON)

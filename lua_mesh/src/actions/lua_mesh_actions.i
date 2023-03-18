@@ -19,7 +19,7 @@
 %{
 #include "lua_mesh_log_manager.hpp"
 #include "lua_mesh_action_log.hpp"
-#include "lua_mesh_action_talk.hpp"
+#include "lua_mesh_action_scan.hpp"
 #include "lua_mesh_action_timer.hpp"
 %}
 
@@ -39,7 +39,7 @@
 
 // Include the actions and define exception handlers
 %exception Talk::Talk CTOR_ERROR;
-%include "lua_mesh_action_talk.hpp"
+%include "lua_mesh_action_scan.hpp"
 
 %exception Timer::Timer CTOR_ERROR;
 %include "lua_mesh_action_timer.hpp"
