@@ -12,7 +12,9 @@
 
 ]]
 
-function connector ()
+function connector_fiber ()
+
+  local connector = Actions.Connector()
 
   -- Scan for a Mesh node and connect to it. Whilst part of the mesh,
   -- L3 (IP) traffic can flow.
@@ -23,7 +25,7 @@ function connector ()
 
 end
 
-function event_monitor ()
+function event_monitor_fiber ()
 
   -- Monitor the status of the connection. If the node becomes
   -- disconnected then signal the connector coroutine.
@@ -82,10 +84,10 @@ local function main(args)
 
   -- Create co-routines
   local coroutines = {}
-  coroutines["connector"] = coroutine.create(connector)
+  coroutines["connector"] = coroutine.create(connector_fiber)
   coroutine.resume(coroutines["connector"])
 
-  coroutines["event_monitor"] = coroutine.create(event_monitor)
+  coroutines["event_monitor"] = coroutine.create(event_monitor_fiber)
   coroutine.resume(coroutines["event_monitor"])
 
   -- Run the main loop

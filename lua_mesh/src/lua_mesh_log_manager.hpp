@@ -47,7 +47,7 @@ private:
   LogManager& operator=(LogManager&& rhs) = delete;
 
   // Constants relating to the logger.
-  inline static const std::string logger_name = "LUA-CHAT";
+  inline static const std::string logger_name = "LUA-MESH";
 
   // Constants relating to the rotating file sink. Note that max_file_size
   // is expressed in bytes files are rotated when they reach 1 MB in size.
