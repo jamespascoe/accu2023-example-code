@@ -12,15 +12,20 @@
 
 ]]
 
-function connector_fiber ()
+function connector_fiber (port)
 
-  local connector = Actions.Connector()
+  local connector = Actions.Connector(port)
 
   -- Scan for a Mesh node and connect to it. Whilst part of the mesh,
   -- L3 (IP) traffic can flow.
   while true do
     Actions.Log.warn("In connector")
-    coroutine.yield()
+
+    repeat
+      coroutine.yield()
+    until (connector:Connect("localhost", "8888") ==
+           Actions.Connector.ErrorType_SUCCESS)
+
   end
 
 end
@@ -75,17 +80,20 @@ local function main(args)
 
   print("Welcome to Lua Mesh !")
 
-  if (args) then
-    Actions.Log.info("Arguments passed to Lua:")
-    for k,v in pairs(args) do
-      Actions.Log.info(string.format("  %s %s", tostring(k), tostring(v)))
-    end
+  if (not args or not args["port"]) then
+    print("Usage: lua_mesh lua_mesh.lua -a port=<listen port>")
+    os.exit(1)
   end
+
+  print(
+    string.format("Starting LuaChat:\n" ..
+                  "  listen port: %d\n", tonumber(args["port"]))
+  )
 
   -- Create co-routines
   local coroutines = {}
   coroutines["connector"] = coroutine.create(connector_fiber)
-  coroutine.resume(coroutines["connector"])
+  coroutine.resume(coroutines["connector"], args["port"])
 
   coroutines["event_monitor"] = coroutine.create(event_monitor_fiber)
   coroutine.resume(coroutines["event_monitor"])
