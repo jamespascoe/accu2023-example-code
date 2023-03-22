@@ -12,31 +12,43 @@
 
 ]]
 
-function connector_fiber (port)
-
-  local connector = Actions.Connector(port)
+function connector_fiber (connector, remote_port)
 
   -- Scan for a Mesh node and connect to it. Whilst part of the mesh,
   -- L3 (IP) traffic can flow.
   while true do
-    Actions.Log.warn("In connector")
+
+    scanner_fiber()
+
+    Actions.Log.warn("In connector " .. remote_port)
+
+    connector:Send("localhost", remote_port, "PING")
 
     repeat
       coroutine.yield()
-    until (connector:Connect("localhost", "8888") ==
-           Actions.Connector.ErrorType_SUCCESS)
+    until (connector:IsMessageAvailable())
+
+    Actions.Log.critical("Received message " .. connector:GetNextMessage())
 
   end
 
 end
 
-function event_monitor_fiber ()
+function event_monitor_fiber (connector, remote_port)
 
   -- Monitor the status of the connection. If the node becomes
   -- disconnected then signal the connector coroutine.
   while true do
     Actions.Log.warn("In event_monitor")
-    coroutine.yield()
+
+    repeat
+      coroutine.yield()
+    until (connector:IsMessageAvailable())
+
+    Actions.Log.critical("Received message " .. connector:GetNextMessage())
+
+    connector:Send("localhost", remote_port, "PONG")
+
   end
 
 end
@@ -86,17 +98,26 @@ local function main(args)
   end
 
   print(
-    string.format("Starting LuaChat:\n" ..
+    string.format("Starting LuaMesh:\n" ..
                   "  listen port: %d\n", tonumber(args["port"]))
   )
+
+  local connector = Actions.Connector(args["port"])
+
+  local remote_port
+  if (args["port"] == 7777) then
+    remote_port = "8888"
+  else
+    remote_port = "7777"
+  end
 
   -- Create co-routines
   local coroutines = {}
   coroutines["connector"] = coroutine.create(connector_fiber)
-  coroutine.resume(coroutines["connector"], args["port"])
+  coroutine.resume(coroutines["connector"], connector, remote_port)
 
   coroutines["event_monitor"] = coroutine.create(event_monitor_fiber)
-  coroutine.resume(coroutines["event_monitor"])
+  coroutine.resume(coroutines["event_monitor"], connector, remote_port)
 
   -- Run the main loop
   dispatcher(coroutines)
