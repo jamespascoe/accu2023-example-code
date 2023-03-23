@@ -33,7 +33,7 @@ public:
   // Default logging constants
   inline static const std::string def_log_lvl = "warning";
   inline static const std::string def_file_lvl = "info";
-  inline static const std::string def_log_name = "logs/lua-mesh.log";
+  inline static const std::string def_log_name = "logs/lua-fiber.log";
 
 private:
 
@@ -47,7 +47,7 @@ private:
   LogManager& operator=(LogManager&& rhs) = delete;
 
   // Constants relating to the logger.
-  inline static const std::string logger_name = "LUA-MESH";
+  inline static const std::string logger_name = "LUA-FIBER";
 
   // Constants relating to the rotating file sink. Note that max_file_size
   // is expressed in bytes files are rotated when they reach 1 MB in size.

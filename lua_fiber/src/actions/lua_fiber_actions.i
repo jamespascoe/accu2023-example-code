@@ -17,15 +17,14 @@
 
 // Definitions required by the SWIG wrapper to compile
 %{
-#include "lua_mesh_log_manager.hpp"
-#include "lua_mesh_action_log.hpp"
-#include "lua_mesh_action_scan.hpp"
-#include "lua_mesh_action_connector.hpp"
-#include "lua_mesh_action_timer.hpp"
+#include "lua_fiber_log_manager.hpp"
+#include "lua_fiber_action_log.hpp"
+#include "lua_fiber_action_connector.hpp"
+#include "lua_fiber_action_timer.hpp"
 %}
 
 // Files to be wrapped by SWIG
-%include "lua_mesh_action_log.hpp"
+%include "lua_fiber_action_log.hpp"
 
 %define CTOR_ERROR
 {
@@ -39,11 +38,8 @@
 %enddef
 
 // Include the actions and define exception handlers
-%exception Scan::Scan CTOR_ERROR;
-%include "lua_mesh_action_scan.hpp"
-
 %exception Connector::Connector CTOR_ERROR;
-%include "lua_mesh_action_connector.hpp"
+%include "lua_fiber_action_connector.hpp"
 
 %exception Timer::Timer CTOR_ERROR;
-%include "lua_mesh_action_timer.hpp"
+%include "lua_fiber_action_timer.hpp"

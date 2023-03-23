@@ -1,5 +1,5 @@
 /**
- * lua_mesh_action_timer.cpp
+ * lua_fiber_action_timer.cpp
  *
  * The Timer action allows the user to wait for a given duration. Lua simply
  * polls the object to discover whether the timer has fired. The action allows
@@ -9,9 +9,9 @@
  * Licensed under the MIT license. See LICENSE file in the project.
  * Feedback: james.pascoe@bluwireless.com
  */
-#include "lua_mesh_action_timer.hpp"
+#include "lua_fiber_action_timer.hpp"
 
-#include "lua_mesh_log_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
 
 #include <functional>
 

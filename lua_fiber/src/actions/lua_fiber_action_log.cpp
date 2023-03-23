@@ -9,9 +9,9 @@
  * Feedback: james.pascoe@bluwireless.com
  */
 
-#include "lua_mesh_log_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
 
-#include "lua_mesh_action_log.hpp"
+#include "lua_fiber_action_log.hpp"
 
 void Log::trace(std::string const& message) { log_trace(message); }
 

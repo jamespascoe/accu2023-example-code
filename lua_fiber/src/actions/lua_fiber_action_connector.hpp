@@ -1,9 +1,9 @@
 /**
- * lua_chat_action_talk.hpp
+ * lua_chat_action_connector.hpp
  *
  * This action allows Lua behaviours to send messages to other Lua behaviours.
  * The primary use-case for this action is for Lua behaviours to implement
- * algorithms that require distributed co-ordination e.g. 'best 2of4'.
+ * algorithms that require distributed co-ordination.
  *
  * Copyright © Blu Wireless. All Rights Reserved.
  * Licensed under the MIT license. See LICENSE file in the project.
@@ -13,21 +13,21 @@
 
 #include "asio/asio.hpp"
 
-class Talk {
+class Connector {
 public:
   enum class ErrorType { SUCCESS, RESOLVE_FAILED, CONNECT_FAILED };
 
   inline static int const default_port = 7777;
 
-  Talk(unsigned short port = default_port);
+  Connector(unsigned short port = default_port);
 
-  ~Talk();
+  ~Connector();
 
   // Do not allow instances to be copied or moved
-  Talk(Talk const& rhs) = delete;
-  Talk(Talk&& rhs) = delete;
-  Talk& operator=(Talk const& rhs) = delete;
-  Talk& operator=(Talk&& rhs) = delete;
+  Connector(Connector const& rhs) = delete;
+  Connector(Connector&& rhs) = delete;
+  Connector& operator=(Connector const& rhs) = delete;
+  Connector& operator=(Connector&& rhs) = delete;
 
   // Send a message to a remote behaviour
   ErrorType Send(std::string const& hostname_or_ip,

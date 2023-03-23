@@ -1,39 +1,39 @@
 /**
- * lua_mesh_action_talk.cpp
+ * lua_fiber_action_connector.cpp
  *
  * This action allows Lua behaviours to send messages to other Lua behaviours.
  * The primary use-case for this action is for Lua behaviours to implement
- * algorithms that require distributed co-ordination e.g. 'best 2of4'.
+ * algorithms that require distributed co-ordination.
  *
  * Copyright © Blu Wireless. All Rights Reserved.
  * Licensed under the MIT license. See LICENSE file in the project.
  * Feedback: james.pascoe@bluwireless.com
  */
 
-#include "lua_mesh_action_talk.hpp"
+#include "lua_fiber_action_connector.hpp"
 
-#include "lua_mesh_log_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
 
-Talk::Talk(unsigned short port)
+Connector::Connector(unsigned short port)
     : m_acceptor(m_io_context, tcp::endpoint(tcp::v4(), port)) {
   start_accept();
 
   m_thread = std::thread([this]() { m_io_context.run(); });
 
-  log_trace("Talk action starting");
+  log_trace("Connector action starting");
 }
 
-Talk::~Talk() {
-  log_trace("Cleaning up in talk action");
+Connector::~Connector() {
+  log_trace("Cleaning up in Connector action");
 
   m_io_context.stop();
   m_thread.join();
 
-  log_trace("Talk action exiting");
+  log_trace("Connector action exiting");
 }
 
 // Send a message to a remote behaviour
-Talk::ErrorType Talk::Send(std::string const& hostname_or_ip,
+Connector::ErrorType Connector::Send(std::string const& hostname_or_ip,
                            std::string const& port,
                            std::string const& message) {
   // Resolve the destination endpoint
@@ -44,7 +44,7 @@ Talk::ErrorType Talk::Send(std::string const& hostname_or_ip,
     endpoints = resolver.resolve(hostname_or_ip, port);
   } catch (asio::system_error& e) {
     log_error(
-        "Talk send failed: unable to resolve {}:{}", hostname_or_ip, port);
+        "Connector send failed: unable to resolve {}:{}", hostname_or_ip, port);
 
     return ErrorType::RESOLVE_FAILED;
   }
@@ -55,7 +55,7 @@ Talk::ErrorType Talk::Send(std::string const& hostname_or_ip,
   try {
     asio::connect(connection->socket(), endpoints);
   } catch (asio::system_error& e) {
-    log_error("Talk send failed: could not connect to {}:{}",
+    log_error("Connector send failed: could not connect to {}:{}",
               hostname_or_ip,
               port);
 
@@ -73,7 +73,7 @@ Talk::ErrorType Talk::Send(std::string const& hostname_or_ip,
 }
 
 // Returns the most recent message (or an empty string if none are available)
-std::string Talk::GetNextMessage(void) {
+std::string Connector::GetNextMessage(void) {
   if (!IsMessageAvailable())
     return "";
 
@@ -85,7 +85,7 @@ std::string Talk::GetNextMessage(void) {
 }
 
 // Asynchronous handlers for reading and accepting connections
-void Talk::handle_read(asio::error_code const& error,
+void Connector::handle_read(asio::error_code const& error,
                           std::size_t bytes_transferred,
                           tcp_connection::pointer connection) {
   if (!error || error == asio::error::eof) {
@@ -99,22 +99,22 @@ void Talk::handle_read(asio::error_code const& error,
              bytes_transferred,
              connection->data());
   } else
-    log_error("Talk read failed: returned error: {}", error.message());
+    log_error("Connector read failed: returned error: {}", error.message());
 }
 
 // Note the 'maybe_unused' attribute for the TCP connection. This ensures that
 // the underlying TCP socket is not closed until the write handler has exited.
-void Talk::handle_write(
+void Connector::handle_write(
     asio::error_code const& error,
     std::size_t bytes_transferred,
     [[maybe_unused]] tcp_connection::pointer connection) {
   if (!error)
     log_info("Sent message ({} bytes)", bytes_transferred);
   else
-    log_error("Talk send failed: returned error: {}", error.message());
+    log_error("Connector send failed: returned error: {}", error.message());
 }
 
-void Talk::handle_accept(tcp_connection::pointer connection,
+void Connector::handle_accept(tcp_connection::pointer connection,
                          asio::error_code const& error) {
   if (!error) {
     log_debug("Accepted message connection");
@@ -126,12 +126,12 @@ void Talk::handle_accept(tcp_connection::pointer connection,
                        handle_read(error, bytes_transferred, connection);
                      });
   } else
-    log_error("Talk accept failed: returned error {}", error.message());
+    log_error("Connector accept failed: returned error {}", error.message());
 
   start_accept();
 }
 
-void Talk::start_accept() {
+void Connector::start_accept() {
   tcp_connection::pointer connection =
       tcp_connection::create(m_acceptor.get_executor().context());
 

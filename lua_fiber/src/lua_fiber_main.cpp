@@ -1,7 +1,7 @@
 /**
- * lua_mesh_main.cpp
+ * lua_fiber_main.cpp
  *
- * This file defines the entry point for LuaMesh. Command line arguments are
+ * This file defines the entry point for lua_fiber. Command line arguments are
  * parsed using the excellent cxxopts (https://github.com/jarro2783/cxxopts/).
  *
  * Copyright © Blu Wireless. All Rights Reserved.
@@ -14,14 +14,14 @@
 
 #include "cxxopts/cxxopts.hpp"
 
-#include "lua_mesh_log_manager.hpp"
-#include "lua_mesh_lua_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
+#include "lua_fiber_lua_manager.hpp"
 
 // Parse command line arguments (see cxxopts.hpp for details)
 static cxxopts::ParseResult parse(int argc, char *argv[])
 {
   cxxopts::Options options(argv[0],
-     "Lua Mesh - A Lua Based Tool for Simulating Mobile Mesh Networks");
+     "Lua Fiber - A Lua Example of Fibers");
 
   options.positional_help("[Lua behaviour to run]").show_positional_help();
 

@@ -9,8 +9,8 @@ Feedback: james.pascoe@bluwireless.com
 ]]
 
 cmake_minimum_required (VERSION 3.12)
-project(LUA_MESH DESCRIPTION
-        "Lua Mesh - A Lua Based Tool for Simulating Mobile Mesh Networks")
+project(LUA_FIBER DESCRIPTION
+  "Lua Fiber - A Lua Example of Fibers")
 
 # Look for required packages
 if (POLICY CMP0078)

@@ -12,7 +12,7 @@
 
 #include <filesystem>
 
-#include "lua_mesh_log_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
 
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"

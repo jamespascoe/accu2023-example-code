@@ -1,10 +1,10 @@
 --[[
 
- lua_mesh.lua
+ lua_fiber.lua
 
- This behaviour simulates a Mobile Mesh. In particular, the actions
- allow the connection management behaviour to be arbitraily complex,
- whilst mocking out the low-level interactions with the hardware.
+ This behaviour provides a simple example of fibers. The C++
+ actions allow the behaviour to be arbitraily complex, whilst
+ mocking out the low-level interactions with the hardware.
 
  Copyright © Blu Wireless. All Rights Reserved.
  Licensed under the MIT license. See LICENSE file in the project.
@@ -12,15 +12,16 @@
 
 ]]
 
-function connector_fiber (connector, remote_port)
+function ping_fiber (connector, remote_port)
 
-  -- Scan for a Mesh node and connect to it. Whilst part of the mesh,
-  -- L3 (IP) traffic can flow.
+  Actions.Log.info(
+    "ping_fiber: connecting to port: " .. remote_port
+  )
+
+  local timer = Actions.Timer()
+
+  -- Connect to a node and send a 'ping' message
   while true do
-
-    scanner_fiber()
-
-    Actions.Log.warn("In connector " .. remote_port)
 
     connector:Send("localhost", remote_port, "PING")
 
@@ -28,26 +29,44 @@ function connector_fiber (connector, remote_port)
       coroutine.yield()
     until (connector:IsMessageAvailable())
 
-    Actions.Log.critical("Received message " .. connector:GetNextMessage())
+    Actions.Log.info(
+      "ping_fiber: received: " .. connector:GetNextMessage()
+    )
+
+    timer(Actions.Timer.WaitType_NOBLOCK, 1, "s", 1)
+    while timer:IsWaiting() do
+      coroutine.yield()
+    end
 
   end
 
 end
 
-function event_monitor_fiber (connector, remote_port)
+function pong_fiber (connector, remote_port)
 
-  -- Monitor the status of the connection. If the node becomes
-  -- disconnected then signal the connector coroutine.
+  Actions.Log.info(
+    "pong_fiber: connecting to port: " .. remote_port
+  )
+
+  local timer = Actions.Timer()
+
+  -- Connect to a node and send a 'pong' message
   while true do
-    Actions.Log.warn("In event_monitor")
 
     repeat
       coroutine.yield()
     until (connector:IsMessageAvailable())
 
-    Actions.Log.critical("Received message " .. connector:GetNextMessage())
+    Actions.Log.info(
+      "pong_fiber: received: " .. connector:GetNextMessage()
+    )
 
     connector:Send("localhost", remote_port, "PONG")
+
+    timer(Actions.Timer.WaitType_NOBLOCK, 1, "s", 2)
+    while timer:IsWaiting() do
+      coroutine.yield()
+    end
 
   end
 
@@ -79,11 +98,9 @@ function dispatcher (coroutines)
       end
     end
 
-    -- Run the dispatcher every 1 ms. Note, that this is required to prevent
-    -- LuaChat from consuming 100% of a core. Note also that the notification
-    -- value is set to the maximum value of a uint32_t to prevent conflicts
-    -- with user timer ids (i.e. user timers can start from 0 and count up).
-    timer(Actions.Timer.WaitType_BLOCK, 1, "ms", 0xffffffff)
+    -- Run the dispatcher every 1 ms. Note, that a blocking timer is required
+    -- to prevent lua_mesh from consuming 100% of a core.
+    timer(Actions.Timer.WaitType_BLOCK, 1, "ms", 3)
 
   end
 end
@@ -103,21 +120,15 @@ local function main(args)
   )
 
   local connector = Actions.Connector(args["port"])
-
-  local remote_port
-  if (args["port"] == 7777) then
-    remote_port = "8888"
-  else
-    remote_port = "7777"
-  end
+  local remote_port = args["port"] == 7777 and "8888" or "7777"
 
   -- Create co-routines
   local coroutines = {}
-  coroutines["connector"] = coroutine.create(connector_fiber)
-  coroutine.resume(coroutines["connector"], connector, remote_port)
+  coroutines["ping"] = coroutine.create(ping_fiber)
+  coroutine.resume(coroutines["ping"], connector, remote_port)
 
-  coroutines["event_monitor"] = coroutine.create(event_monitor_fiber)
-  coroutine.resume(coroutines["event_monitor"], connector, remote_port)
+  coroutines["pong"] = coroutine.create(pong_fiber)
+  coroutine.resume(coroutines["pong"], connector, remote_port)
 
   -- Run the main loop
   dispatcher(coroutines)
@@ -125,8 +136,8 @@ local function main(args)
 end
 
 local behaviour = {
-  name = "LuaMesh",
-  description = "A Lua behaviour to simulate a Mobile Mesh",
+  name = "lua_mesh",
+  description = "A Lua behaviour to demonstrate fibers",
   entry_point = main
 }
 

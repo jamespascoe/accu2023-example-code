@@ -18,8 +18,8 @@
 
 #include <lua.hpp>
 
-#include "lua_mesh_log_manager.hpp"
-#include "lua_mesh_lua_manager.hpp"
+#include "lua_fiber_log_manager.hpp"
+#include "lua_fiber_lua_manager.hpp"
 
 // Declare the prototype to import the actions library.
 extern "C" {
