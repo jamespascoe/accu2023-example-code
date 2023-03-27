@@ -107,15 +107,15 @@ end
 
 local function main(args)
 
-  print("Welcome to Lua Mesh !")
+  print("Welcome to Lua Fiber !")
 
   if (not args or not args["port"]) then
-    print("Usage: lua_mesh lua_mesh.lua -a port=<listen port>")
+    print("Usage: lua_fiber lua_fiber.lua -a port=<listen port>")
     os.exit(1)
   end
 
   print(
-    string.format("Starting LuaMesh:\n" ..
+    string.format("Starting Lua Fiber:\n" ..
                   "  listen port: %d\n", tonumber(args["port"]))
   )
 
@@ -136,7 +136,7 @@ local function main(args)
 end
 
 local behaviour = {
-  name = "lua_mesh",
+  name = "lua_fiber",
   description = "A Lua behaviour to demonstrate fibers",
   entry_point = main
 }
