@@ -26,7 +26,7 @@ asio::awaitable<void> do_session(tcp_stream stream)
   // This buffer is required to persist across reads
   beast::flat_buffer buffer;
 
-  for(;;)
+  for(;;) {
     try
     {
       // Set the timeout.
@@ -57,10 +57,11 @@ asio::awaitable<void> do_session(tcp_stream stream)
       // Determine if we should close the connection
       if(!req.keep_alive()) break;
     }
-  catch (boost::system::system_error & se)
-  {
-    if (se.code() != http::error::end_of_stream)
-      throw;
+    catch (boost::system::system_error & se)
+    {
+      if (se.code() != http::error::end_of_stream)
+        throw;
+    }
   }
 
   // Send a TCP shutdown
@@ -72,8 +73,8 @@ asio::awaitable<void> do_listen(tcp::endpoint endpoint)
 {
   // Open the acceptor
   auto acceptor = asio::use_awaitable.as_default_on(
-      tcp::acceptor(co_await asio::this_coro::executor)
-      );
+    tcp::acceptor(co_await asio::this_coro::executor)
+  );
   acceptor.open(endpoint.protocol());
 
   // Allow address reuse
