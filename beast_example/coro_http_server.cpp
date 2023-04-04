@@ -50,6 +50,7 @@ do_session(
           res.set(http::field::server, "Beast");
           res.body() = "Hello ACCU 2023 from the Stackful Coroutine Server!";
           res.prepare_payload();
+          res.keep_alive(req.keep_alive());
           return res;
         };
 
@@ -57,6 +58,9 @@ do_session(
         beast::async_write(stream, handle_request(), yield[ec]);
 
         if(ec) return error(ec, "write response");
+
+        // Determine if we should close the connection
+        if(!req.keep_alive()) break;
     }
 
     // Close the connection
