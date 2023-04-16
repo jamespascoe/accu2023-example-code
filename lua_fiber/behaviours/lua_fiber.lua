@@ -3,7 +3,7 @@
  lua_fiber.lua
 
  This behaviour provides a simple example of fibers. The C++
- actions allow the behaviour to be arbitraily complex, whilst
+ actions allow the behaviour to be arbitrarily complex, whilst
  mocking out the low-level interactions with the hardware.
 
  Copyright © Blu Wireless. All Rights Reserved.
